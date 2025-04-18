@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            display: grid;
+            place-content: center;
+            background-color: #333333;
+        }
+
+        .wordle {
+            display: grid;
+            gap: 10px;
+        }
+
+        .word {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tile {
+            width: 50px;
+            height: 50px;
+            background-color: #000000;
+            border-radius: 8px;
+            border: 1px solid #ffffff80;
+            color: #ffffff;
+            display: grid;
+            font-size: 30px;
+            place-content: center;
+            text-transform: uppercase;
+        }
+
+        .tile.correct {
+            background-color: green;
+        }
+
+        .tile.wrong {
+            background-color: gray;
+        }
+
+        .tile.near {
+            background-color: yellow;
+            color: #000000;
+        }
+        h1 {
+            color: #ffffff;
+            text-align: center;
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Guess the Word</h1>
+    <div class="wordle">
+        <div class="word">
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+        </div>
+        <div class="word">
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+        </div>
+        <div class="word">
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+        </div>
+        <div class="word">
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+        </div>
+        <div class="word">
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+        </div>
+        <div class="word">
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+            <div class="tile"></div>
+        </div>
+    </div>
+
+    <script>
+        let correctWord = ''; // Global scope
+
+        fetch('word.json')
+            .then(response => response.json())
+            .then(words => {
+                const randomIndex = Math.floor(Math.random() * words.length);
+                const randomWord = words[randomIndex].word || words[randomIndex];
+                correctWord = randomWord.toLowerCase();
+            })
+            .catch(error => console.error("Error fetching words:", error));
+
+        function winner(tiles) {
+            if (tiles[0].innerText.toLowerCase() === correctWord[0] &&
+                tiles[1].innerText.toLowerCase() === correctWord[1] &&
+                tiles[2].innerText.toLowerCase() === correctWord[2] &&
+                tiles[3].innerText.toLowerCase() === correctWord[3] &&
+                tiles[4].innerText.toLowerCase() === correctWord[4]) {
+                alert('You win!');
+                return true;
+            }
+        }
+        function checkWord(tiles) {
+            tiles.forEach((tile, index) => {
+                const letter = tile.innerText.toLowerCase();
+                if (letter === correctWord[index]) {
+                    tile.classList.add('correct');
+                } else if (correctWord.includes(letter)) {
+                    tile.classList.add('near');
+                } else {
+                    tile.classList.add('wrong');
+                }
+            });
+        }
+        function handleKeyPress(tiles, onComplete) {
+            let count = 0;
+
+            function onKeyPress(e) {
+                if (e.key === 'Enter') return;
+
+                if (e.key === 'Backspace') {
+                    if (count > 0) {
+                        count--;
+                        tiles[count].innerText = '';
+                    }
+                    return;
+                }
+
+                if (e.key >= 'a' && e.key <= 'z') {
+                    if (count < tiles.length) {
+                        tiles[count].innerText = e.key;
+                        count++;
+
+                        if (count >= tiles.length && onComplete) {
+                            document.removeEventListener('keydown', onKeyPress);
+                            onComplete();
+                        }
+                    }
+                }
+            }
+
+            document.addEventListener('keydown', onKeyPress);
+        }
+
+        function handleWord() {
+            const words = document.querySelectorAll('.word');
+            let current = 0;
+
+            function activateWord(index) {
+                if (index < words.length) {
+                    const tiles = words[index].querySelectorAll('.tile');
+                    handleKeyPress(tiles, () => {
+                        // Wait for Enter to move to next word
+                        const waitForEnter = (e) => {
+                            if (e.key === 'Enter') {
+                                document.removeEventListener('keypress', waitForEnter);
+                                checkWord(tiles);
+                                if (winner(tiles)) {
+                                    return
+                                }
+                                activateWord(index + 1);
+                            }
+                        };
+                        document.addEventListener('keypress', waitForEnter);
+                    });
+                }
+            }
+
+            activateWord(current);
+        }
+        handleWord();
+    </script>
+</body>
+
+</html>
